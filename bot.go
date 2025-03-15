@@ -267,7 +267,6 @@ func (bot *BotAPI) UploadFiles(endpoint string, params Params, files []RequestFi
 // It requires the FileID.
 func (bot *BotAPI) GetFileDirectURL(fileID string) (string, error) {
 	file, err := bot.GetFile(FileConfig{fileID})
-
 	if err != nil {
 		return "", err
 	}
@@ -429,6 +428,8 @@ func (bot *BotAPI) GetWebhookInfo() (WebhookInfo, error) {
 // GetUpdatesChan starts and returns a channel for getting updates.
 func (bot *BotAPI) GetUpdatesChan(config UpdateConfig) UpdatesChannel {
 	ch := make(chan Update, bot.Buffer)
+	chRetries := make(chan int, 1)
+	chRetries <- 0
 
 	go func() {
 		for {
@@ -441,6 +442,19 @@ func (bot *BotAPI) GetUpdatesChan(config UpdateConfig) UpdatesChannel {
 
 			updates, err := bot.GetUpdates(config)
 			if err != nil {
+				var __err__ Error
+				if jsonErr := json.Unmarshal([]byte(err.Error()), &__err__); jsonErr != nil {
+					log.Println(jsonErr)
+				}
+				// if err.Error() == "{\"Code\":401,\"Message\":\"Unauthorized\"}" {
+				if __err__.Code == 401 || __err__.Code == 403 || __err__.Message == "Unauthorized" {
+					last := <-chRetries
+					if last >= 3 {
+						bot.StopReceivingUpdates()
+					} else {
+						chRetries <- last + 1
+					}
+				}
 				log.Println(err)
 				log.Println("Failed to get updates, retrying in 3 seconds...")
 				time.Sleep(time.Second * 3)
