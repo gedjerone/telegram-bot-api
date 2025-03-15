@@ -428,8 +428,6 @@ func (bot *BotAPI) GetWebhookInfo() (WebhookInfo, error) {
 // GetUpdatesChan starts and returns a channel for getting updates.
 func (bot *BotAPI) GetUpdatesChan(config UpdateConfig) UpdatesChannel {
 	ch := make(chan Update, bot.Buffer)
-	chRetries := make(chan int, 1)
-	chRetries <- 0
 
 	go func() {
 		for {
@@ -446,16 +444,7 @@ func (bot *BotAPI) GetUpdatesChan(config UpdateConfig) UpdatesChannel {
 				if jsonErr := json.Unmarshal([]byte(err.Error()), &__err__); jsonErr != nil {
 					log.Println(jsonErr)
 				}
-				// if err.Error() == "{\"Code\":401,\"Message\":\"Unauthorized\"}" {
-				if __err__.Code == 401 || __err__.Code == 403 || __err__.Message == "Unauthorized" {
-					last := <-chRetries
-					if last >= 3 {
-						close(ch)
-						return
-					} else {
-						chRetries <- last + 1
-					}
-				}
+				ch <- Update{UpdateID: -1, Error: &__err__}
 				log.Println(err)
 				log.Println("Failed to get updates, retrying in 3 seconds...")
 				time.Sleep(time.Second * 3)
