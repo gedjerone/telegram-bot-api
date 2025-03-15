@@ -450,8 +450,8 @@ func (bot *BotAPI) GetUpdatesChan(config UpdateConfig) UpdatesChannel {
 				if __err__.Code == 401 || __err__.Code == 403 || __err__.Message == "Unauthorized" {
 					last := <-chRetries
 					if last >= 3 {
-						close(bot.shutdownChannel)
-						// close(bot.shutdownChannel)
+						close(ch)
+						return
 					} else {
 						chRetries <- last + 1
 					}
