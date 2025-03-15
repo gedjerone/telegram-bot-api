@@ -451,6 +451,7 @@ func (bot *BotAPI) GetUpdatesChan(config UpdateConfig) UpdatesChannel {
 					last := <-chRetries
 					if last >= 3 {
 						close(bot.shutdownChannel)
+						// close(bot.shutdownChannel)
 					} else {
 						chRetries <- last + 1
 					}
