@@ -27,7 +27,7 @@ type BotAPI struct {
 
 	Self            User       `json:"-"`
 	Client          HTTPClient `json:"-"`
-	shutdownChannel chan interface{}
+	ShutdownChannel chan interface{}
 
 	apiEndpoint string
 }
@@ -56,7 +56,7 @@ func NewBotAPIWithClient(token, apiEndpoint string, client HTTPClient) (*BotAPI,
 		Token:           token,
 		Client:          client,
 		Buffer:          100,
-		shutdownChannel: make(chan interface{}),
+		ShutdownChannel: make(chan interface{}),
 
 		apiEndpoint: apiEndpoint,
 	}
@@ -432,7 +432,7 @@ func (bot *BotAPI) GetUpdatesChan(config UpdateConfig) UpdatesChannel {
 	go func() {
 		for {
 			select {
-			case <-bot.shutdownChannel:
+			case <-bot.ShutdownChannel:
 				close(ch)
 				return
 			default:
@@ -440,11 +440,6 @@ func (bot *BotAPI) GetUpdatesChan(config UpdateConfig) UpdatesChannel {
 
 			updates, err := bot.GetUpdates(config)
 			if err != nil {
-				var __err__ Error
-				if jsonErr := json.Unmarshal([]byte(err.Error()), &__err__); jsonErr != nil {
-					log.Println(jsonErr)
-				}
-				ch <- Update{UpdateID: -1, Error: &__err__}
 				log.Println(err)
 				log.Println("Failed to get updates, retrying in 3 seconds...")
 				time.Sleep(time.Second * 3)
@@ -469,7 +464,7 @@ func (bot *BotAPI) StopReceivingUpdates() {
 	if bot.Debug {
 		log.Println("Stopping the update receiver routine...")
 	}
-	close(bot.shutdownChannel)
+	close(bot.ShutdownChannel)
 }
 
 // ListenForWebhook registers a http handler for a webhook.

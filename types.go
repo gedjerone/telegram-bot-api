@@ -21,8 +21,8 @@ type APIResponse struct {
 
 // Error is an error containing extra information returned by the Telegram API.
 type Error struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
+	Code    int
+	Message string
 	ResponseParameters
 }
 
@@ -114,10 +114,6 @@ type Update struct {
 	//
 	// optional
 	ChatJoinRequest *ChatJoinRequest `json:"chat_join_request,omitempty"`
-	// Error is an error object returned by the Telegram API.
-	//
-	// optional
-	Error *Error `json:"error,omitempty"`
 }
 
 // SentFrom returns the user who sent an update. Can be nil, if Telegram did not provide information
